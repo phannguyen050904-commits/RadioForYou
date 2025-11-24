@@ -17,18 +17,17 @@ const notificationSettings = document.querySelectorAll('.setting-item');
 let timerIntervals = [];
 let isRunning = false;
 let currentEditingTimer = null;
+const folderHistory = './sound/History/';
 
 // Định nghĩa các file âm thanh cho từng loại thông báo
 const soundFiles = {
     eye: [
         'sound/eye/eye1.m4a',
         'sound/eye/eye2.m4a',
-        'sound/eye/eye3.m4a'
     ],
     sit: [
         'sound/sit/sit1.m4a',
         'sound/sit/sit2.m4a',
-        'sound/sit/sit3.m4a'
     ],
     drinkwater: [
         'sound/drinkwater/drinkwater1.m4a',
@@ -38,7 +37,13 @@ const soundFiles = {
     warm: [
         'sound/warm/warm1.m4a',
         'sound/warm/warm2.m4a',
-        'sound/warm/warm3.m4a'
+    ],
+    history: [
+        './sound/History/Constantinopolis.m4a',
+        './sound/History/Plato.m4a',
+        './sound/History/Mesopotamia.m4a',
+        './sound/History/war100.m4a'
+
     ]
 };
 

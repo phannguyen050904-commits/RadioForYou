@@ -1,90 +1,119 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8S4863NP8Y"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-8S4863NP8Y');
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ thống nhắc nhở định kỳ</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <div class="status" id="status"></div>
-
-        <div class="setting-item">
-            <div class="sound-option">
-                <select class="soundSelect">
-                    <option value="eye">Nhắc nhở nghỉ mắt</option>
-                    <option value="sit">Nhắc nhở ngồi lâu</option>
-                    <option value="drinkwater">Nhắc nhở uống nước</option>
-                </select>
-                <input type="checkbox" class="soundToggle" checked />
-                <button class="test-sound">🔊</button>
-                <input type="range" class="volumeControl" min="0" max="100" value="70">
-                <div class="timer-display editable-timer" id="timer1" data-time="20">20:00</div>
+    <header>
+        <div class="header-content">
+        <div class="header-left">
+            <div class="logo">Góp ý cho mình ở đây nhé :></div>
+            <div class="social-container">
+            <a href="https://www.instagram.com/fuownguyen/" target="_blank" class="logoinstagram">
+                <img src="icons/instagram_icon.png" class="instagram_icon" alt="Instagram">
+            </a>
             </div>
         </div>
-        
-        <div class="setting-item">
-            <div class="sound-option">
-                <select class="soundSelect">
-                    <option value="eye">Nhắc nhở nghỉ mắt</option>
-                    <option value="sit">Nhắc nhở ngồi lâu</option>
-                    <option value="drinkwater">Nhắc nhở uống nước</option>
-                    <option value="warm">Nhắc nhở mặc ấm</option>
+        </div>
+    </header>
 
-                </select>
-                <input type="checkbox" class="soundToggle" checked />
-                <button class="test-sound">🔊</button>
-                <input type="range" class="volumeControl" min="0" max="100" value="70">
-                <div class="timer-display editable-timer" id="timer2" data-time="20">20:00</div>
-            </div>
-        </div>
-        
-        <div class="setting-item">
-            <div class="sound-option">
-                <select class="soundSelect">
-                    <option value="eye">Nhắc nhở nghỉ mắt</option>
-                    <option value="sit">Nhắc nhở ngồi lâu</option>
-                    <option value="drinkwater">Nhắc nhở uống nước</option>
-                </select>
-                <input type="checkbox" class="soundToggle" checked />
-                <button class="test-sound">🔊</button>
-                <input type="range" class="volumeControl" min="0" max="100" value="70">
-                <div class="timer-display editable-timer" id="timer3" data-time="20">20:00</div>
-            </div>
-        </div>
-        
-        <div class="controls">
-            <button id="startBtn">Bắt đầu</button>
-            <button id="stopBtn">Dừng lại</button>
-        </div>
-    </div>
+    <main>
+        <div class="container">
+            <div class="status" id="status"></div>
 
-    <!-- Modal điều chỉnh thời gian -->
-    <div class="time-modal" id="timeModal">
-        <div class="modal-content">
-            <div class="custom-time">
-                <div class="custom-inputs">
-                    <div class="input-group">
-                        <label>Phút:</label>
-                        <input type="number" id="customMinutes" min="1" max="60" value="20">
-                    </div>
-                    <div class="input-group">
-                        <label>Giây:</label>
-                        <input type="number" id="customSeconds" min="0" max="59" value="0">
-                    </div>
+            <div class="setting-item">
+                <div class="sound-option">
+                    <select class="soundSelect">
+                        <option value="eye">Nhắc nhở nghỉ mắt</option>
+                        <option value="sit">Nhắc nhở ngồi lâu</option>
+                        <option value="drinkwater">Nhắc nhở uống nước</option>
+                        <option value="warm">Nhắc nhở mặc ấm</option>
+                        <option value="history">Lảm nhảm kiến thức lịch sử</option>
+
+                    </select>
+                    <input type="checkbox" class="soundToggle" checked />
+                    <button class="test-sound">🔊</button>
+                    <input type="range" class="volumeControl" min="0" max="100" value="70">
+                    <div class="timer-display editable-timer" id="timer1" data-time="20">20:00</div>
                 </div>
             </div>
-            <div class="preview-time">
-                <span id="timePreview">20:00</span>
+            
+            <div class="setting-item">
+                <div class="sound-option">
+                    <select class="soundSelect">
+                        <option value="eye">Nhắc nhở nghỉ mắt</option>
+                        <option value="sit">Nhắc nhở ngồi lâu</option>
+                        <option value="drinkwater">Nhắc nhở uống nước</option>
+                        <option value="warm">Nhắc nhở mặc ấm</option>
+                        <option value="history">Lảm nhảm kiến thức lịch sử</option>
+
+                    </select>
+                    <input type="checkbox" class="soundToggle" checked />
+                    <button class="test-sound">🔊</button>
+                    <input type="range" class="volumeControl" min="0" max="100" value="70">
+                    <div class="timer-display editable-timer" id="timer2" data-time="20">20:00</div>
+                </div>
             </div>
-            <div class="modal-actions">
-                <button id="confirmTime">Xác nhận</button>
-                <button id="cancelTime">Hủy</button>
+            
+            <div class="setting-item">
+                <div class="sound-option">
+                    <select class="soundSelect">
+                        <option value="eye">Nhắc nhở nghỉ mắt</option>
+                        <option value="sit">Nhắc nhở ngồi lâu</option>
+                        <option value="drinkwater">Nhắc nhở uống nước</option>
+                        <option value="warm">Nhắc nhở mặc ấm</option>
+                        <option value="history">Lảm nhảm kiến thức lịch sử</option>
+                    </select>
+                    <input type="checkbox" class="soundToggle" checked />
+                    <button class="test-sound">🔊</button>
+                    <input type="range" class="volumeControl" min="0" max="100" value="70">
+                    <div class="timer-display editable-timer" id="timer3" data-time="20">20:00</div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button id="startBtn">Bắt đầu</button>
+                <button id="stopBtn">Dừng lại</button>
             </div>
         </div>
-    </div>
 
+        <!-- Modal điều chỉnh thời gian -->
+        <div class="time-modal" id="timeModal">
+            <div class="modal-content">
+                <div class="custom-time">
+                    <div class="custom-inputs">
+                        <div class="input-group">
+                            <label>Phút:</label>
+                            <input type="number" id="customMinutes" min="1" max="60" value="20">
+                        </div>
+                        <div class="input-group">
+                            <label>Giây:</label>
+                            <input type="number" id="customSeconds" min="0" max="59" value="0">
+                        </div>
+                    </div>
+                </div>
+                <div class="preview-time">
+                    <span id="timePreview">20:00</span>
+                </div>
+                <div class="modal-actions">
+                    <button id="confirmTime">Xác nhận</button>
+                    <button id="cancelTime">Hủy</button>
+                </div>
+            </div>
+        </div>
+        </main>
     <div class="notification" id="notification"></div>
 
     <script src="script.js"></script>
