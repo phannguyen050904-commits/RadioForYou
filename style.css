@@ -1,0 +1,292 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+:root {
+  --primary: #6084ac;
+  --primary-dark: #4f6d8f;
+  --text: #333;
+  --text-light: #777;
+  --bg: #26405a;
+  --white: #fff;
+  --border: #e0e0e0;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+body {
+    background: var(--primary-dark);
+    color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.container {
+    background: #ffffff;
+    padding: 3rem;
+    border-radius: 15px;
+}
+
+.status {
+    font-family: 'FontLiS';
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    margin: 25px 0;
+    gap: 15px;
+}
+
+button {
+    font-family: "FontLiS";
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+#startBtn {
+    background: rgba(46, 204, 113, 0.7);
+}
+
+#stopBtn {
+    background: rgba(231, 76, 60, 0.7);
+}
+
+.setting-item {
+    margin-bottom: 25px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
+
+.sound-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+select, input {
+    font-family: 'FontLiS';
+    background: var(--primary-dark);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: white;
+}
+
+.soundSelect {
+    min-width: 150px;
+}
+
+.volumeControl {
+    width: 80px;
+}
+
+.test-sound {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.test-sound:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.timer-display {
+    font-family: 'FontLiS';
+    font-size: 1rem;
+    text-align: center;
+    background: var(--primary-dark);
+    border-radius: 8px;
+    min-width: 60px;
+    padding: 8px 12px;
+}
+
+@font-face {
+  font-family: 'FontLiS';
+  src: url('Dudu_Calligraphy.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+.editable-timer {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.editable-timer:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.editable-timer:active {
+    transform: scale(0.95);
+}
+
+/* Modal điều chỉnh thời gian */
+.time-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.time-modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    max-width: 400px;
+    width: 90%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.custom-time {
+    margin-bottom: 25px;
+}
+
+.custom-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+}
+
+.input-group input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+    color: white;
+    font-size: 1rem;
+    text-align: center;
+}
+
+.input-group input:focus {
+    border-color: #2ecc71;
+    outline: none;
+}
+
+.preview-time {
+    text-align: center;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #2ecc71;
+    margin-bottom: 25px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    border: 2px solid rgba(46, 204, 113, 0.3);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.modal-actions button {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 50px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+#confirmTime {
+    background: rgba(46, 204, 113, 0.8);
+    color: white;
+}
+
+#confirmTime:hover {
+    background: rgba(46, 204, 113, 1);
+    transform: translateY(-2px);
+}
+
+#cancelTime {
+    background: rgba(231, 76, 60, 0.8);
+    color: white;
+}
+
+#cancelTime:hover {
+    background: rgba(231, 76, 60, 1);
+    transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .custom-inputs {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .modal-content {
+        padding: 20px;
+        margin: 20px;
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+    }
+    
+    .modal-actions button {
+        min-width: auto;
+    }
+    
+    .sound-option {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
