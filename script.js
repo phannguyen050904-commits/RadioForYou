@@ -29,7 +29,7 @@ const categoryNames = {
 const vinylImages = {
     'piam': 'disque/piam.png',
     'Sonnguyn': 'disque/Sonnguyn.png',
-    'Giaminh': 'disque/dĩa đen.png',
+    'Giaminh': 'disque/đĩa đen.png',
 };
 
 // ============ PRELOAD SOUNDS ============
