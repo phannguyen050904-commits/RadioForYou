@@ -3,36 +3,37 @@
 function createNewSettingItem() {
     const settingItemHTML = `
         <div class="setting-item">
-            <div class="sound">
-                <div class="custom-select">
-                    <div class="selected">Select song</div>
-                    <ul class="select-menu">
-                        <li class="menu-parent">
+                    <div class="sound">
+                        <div class="custom-select">
+                            <div class="selected">Select song</div>
+                            <ul class="select-menu">
+                                <li class="menu-parent">
+ 
+                                    <li data-value="piam">_p.iam_</li>
+                                    <li data-value="sonnguyn">Sonnguyn</li>
 
-                            <li data-value="piam">_p.iam_</li>
-                            <li data-value="Sonnguyn">Sonnguyn</li>
+                            </ul>
+                        </div>
 
-                    </ul>
+
+                        <div class="timer-display editable-timer" data-time="1">20:00</div>
+                        <div class="controls">
+                            <button class="start-btn">
+                                <img src="ui/starticon.png" class="starticon" alt="starticon">
+                            </button>
+                            <button class="stop-btn" style="display: none;">
+                                <img src="ui/stopicon.png" class="stopicon" alt="stopicon">
+                            </button>
+                        </div>
+                        <button class="remove-btn" data-index="0">
+                        </button>
+                        <div class="volume-control-container">
+                            <button class="test-sound"></button>
+                            <input type="range" class="volumeControl" min="0" max="100" value="70">
+                        </div>
+                    </div>
                 </div>
 
-
-                <div class="timer-display editable-timer" data-time="20">20:00</div>
-                <div class="controls">
-                    <button class="start-btn">
-                        <img src="ui/starticon.png" class="starticon" alt="starticon">
-                    </button>
-                    <button class="stop-btn" style="display: none;">
-                        <img src="ui/stopicon.png" class="stopicon" alt="stopicon">
-                    </button>
-                </div>
-                <button class="remove-btn" data-index="0">
-                </button>
-                <div class="volume-control-container">
-                    <button class="test-sound"></button>
-                    <input type="range" class="volumeControl" min="0" max="100" value="70">
-                </div>
-            </div>
-        </div>
     `;
     
     return settingItemHTML;
