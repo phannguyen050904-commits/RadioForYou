@@ -1,121 +1,126 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
+    <meta charset="UTF-8">
+
     <!-- Google tag (gtag.js) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-8S4863NP8Y"></script>
     <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-
     gtag('config', 'G-8S4863NP8Y');
     </script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RadioForYou</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
+ <!----------------------------------------------------------------------------->
+
 <body>
     <header>
         <div class="header-content">
-        <div class="header-left">
-            <div class="logo">Góp ý cho mình ở đây nhé :></div>
-            <div class="social-container">
-            <a href="https://www.instagram.com/fuownguyen/" target="_blank" class="logoinstagram">
-                <img src="icons/instagram_icon.png" class="instagram_icon" alt="Instagram">
-            </a>
+            <div class="header-left">
+                <div class="logo">RadioForYou:>></div>
+                <a href="https://www.instagram.com/fuownguyen/" target="_blank" class="logoinstagram">
+                    <img src="UI/igicon.png" class="instagram_icon" alt="Instagram">
+                </a>
+                <a href="https://www.facebook.com/phan.phuong.nguyen.873182/" target="_blank" class="logoinstagram">
+                    <img src="UI/fbicon.png" class="instagram_icon" alt="Instagram">
+                </a>
             </div>
-        </div>
         </div>
     </header>
+    <div class = "menu">
+        <div class ="menu-left">
 
-    <main>
-        <div class="container">
-            <div class="status" id="status"></div>
-
-            <div class="setting-item">
-                <div class="sound-option">
-                    <select class="soundSelect">
-                        <option value="eye">Nhắc nhở nghỉ mắt</option>
-                        <option value="sit">Nhắc nhở ngồi lâu</option>
-                        <option value="drinkwater">Nhắc nhở uống nước</option>
-                        <option value="warm">Nhắc nhở mặc ấm</option>
-                        <option value="history">Lảm nhảm kiến thức lịch sử</option>
-
-                    </select>
-                    <input type="checkbox" class="soundToggle" checked />
-                    <button class="test-sound">🔊</button>
-                    <input type="range" class="volumeControl" min="0" max="100" value="70">
-                    <div class="timer-display editable-timer" id="timer1" data-time="20">20:00</div>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="sound-option">
-                    <select class="soundSelect">
-                        <option value="eye">Nhắc nhở nghỉ mắt</option>
-                        <option value="sit">Nhắc nhở ngồi lâu</option>
-                        <option value="drinkwater">Nhắc nhở uống nước</option>
-                        <option value="warm">Nhắc nhở mặc ấm</option>
-                        <option value="history">Lảm nhảm kiến thức lịch sử</option>
-
-                    </select>
-                    <input type="checkbox" class="soundToggle" checked />
-                    <button class="test-sound">🔊</button>
-                    <input type="range" class="volumeControl" min="0" max="100" value="70">
-                    <div class="timer-display editable-timer" id="timer2" data-time="20">20:00</div>
-                </div>
-            </div>
-            
-            <div class="setting-item">
-                <div class="sound-option">
-                    <select class="soundSelect">
-                        <option value="eye">Nhắc nhở nghỉ mắt</option>
-                        <option value="sit">Nhắc nhở ngồi lâu</option>
-                        <option value="drinkwater">Nhắc nhở uống nước</option>
-                        <option value="warm">Nhắc nhở mặc ấm</option>
-                        <option value="history">Lảm nhảm kiến thức lịch sử</option>
-                    </select>
-                    <input type="checkbox" class="soundToggle" checked />
-                    <button class="test-sound">🔊</button>
-                    <input type="range" class="volumeControl" min="0" max="100" value="70">
-                    <div class="timer-display editable-timer" id="timer3" data-time="20">20:00</div>
-                </div>
-            </div>
-            
-            <div class="controls">
-                <button id="startBtn">Bắt đầu</button>
-                <button id="stopBtn">Dừng lại</button>
-            </div>
         </div>
 
-        <!-- Modal điều chỉnh thời gian -->
-        <div class="time-modal" id="timeModal">
-            <div class="modal-content">
-                <div class="custom-time">
-                    <div class="custom-inputs">
-                        <div class="input-group">
-                            <label>Phút:</label>
-                            <input type="number" id="customMinutes" min="1" max="60" value="20">
+        <div class ="menu-right">
+
+        </div>
+    </div>
+
+
+    <main>
+        <div class = "container-main">
+            <section class="setting">
+                <div class="setting-item">
+                    <div class="sound">
+                        <div class="custom-select">
+                            <div class="selected">Select song</div>
+                            <ul class="select-menu">
+                                <li class="menu-parent">
+ 
+                                    <li data-value="piam">_p.iam_</li>
+                                    <li data-value="Sonnguyn">Sonnguyn</li>
+
+                            </ul>
                         </div>
-                        <div class="input-group">
-                            <label>Giây:</label>
-                            <input type="number" id="customSeconds" min="0" max="59" value="0">
+
+
+                        <div class="timer-display editable-timer" data-time="1">20:00</div>
+                        <div class="controls">
+                            <button class="start-btn">
+                                <img src="ui/starticon.png" class="starticon" alt="starticon">
+                            </button>
+                            <button class="stop-btn" style="display: none;">
+                                <img src="ui/stopicon.png" class="stopicon" alt="stopicon">
+                            </button>
+                        </div>
+                        <button class="remove-btn" data-index="0">
+                        </button>
+                        <div class="volume-control-container">
+                            <button class="test-sound"></button>
+                            <input type="range" class="volumeControl" min="0" max="100" value="70">
                         </div>
                     </div>
                 </div>
-                <div class="preview-time">
-                    <span id="timePreview">20:00</span>
+                <div class="class-controls">
+                    <button id="addClassBtn">
+                        <img src="ui/addicon.png" class="stopicon" alt="stopicon">
+                    </button>
                 </div>
-                <div class="modal-actions">
-                    <button id="confirmTime">Xác nhận</button>
-                    <button id="cancelTime">Hủy</button>
-                </div>
-            </div>
-        </div>
-        </main>
-    <div class="notification" id="notification"></div>
+            </section>
+            
+            <section class="song">
 
+                <div class="sound-player">
+                    <div class="current-audio-info">
+                        <div class="current-audio-title"></div>
+                        <div class="current-audio-category"></div>
+                    </div>
+                    <div class="vinyl-container">
+                        <img src="disque/p.iam.png" class="vinyl-disc" alt="Vinyl Disc">
+                    </div>
+                    <div class="current-audio-info">
+                    </div>
+                    <div class="audio-progress-container">
+                        <div class="progress-bar" id="audioProgressBar">
+                            <div class="progress" id="audioProgress"></div>
+                        </div>
+                        <div class="time-display">
+                            <span class="current-time" id="currentTime">00:00</span>
+                            <span class="total-time" id="totalTime">00:00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="audio-controls">
+                        <button class="audio-control-btn" id="audioPlayPause">
+                            <div class="play-icon" id="playIcon"></div>
+                            <div class="pause-icon hidden" id="pauseIcon"></div>
+                        </button>
+                    </div>
+                </div>
+</section>
+        </div>
+    </main>
+
+
+        
     <script src="script.js"></script>
+    <script src="photo.js"></script>
+    <script src="add.js"></script>
 </body>
 </html>

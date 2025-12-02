@@ -1,279 +1,837 @@
-// Các phần tử DOM
-const statusEl = document.getElementById('status');
-const startBtn = document.getElementById('startBtn');
-const stopBtn = document.getElementById('stopBtn');
-const notification = document.getElementById('notification');
-const timeModal = document.getElementById('timeModal');
-const timePreview = document.getElementById('timePreview');
-const confirmTimeBtn = document.getElementById('confirmTime');
-const cancelTimeBtn = document.getElementById('cancelTime');
-const customMinutes = document.getElementById('customMinutes');
-const customSeconds = document.getElementById('customSeconds');
-
-// Lấy tất cả các cài đặt thông báo
-const notificationSettings = document.querySelectorAll('.setting-item');
-
-// Biến toàn cục
+// ============ GLOBAL VARIABLES ============
 let timerIntervals = [];
-let isRunning = false;
-let currentEditingTimer = null;
-const folderHistory = './sound/History/';
+let currentAudio = null; 
+let audioQueue = [];
 
-// Định nghĩa các file âm thanh cho từng loại thông báo
+// Audio player state
+let currentAudioPlayer = null;
+let isPlaying = false;
+let updateInterval = null;
+
+// Sound files configuration
 const soundFiles = {
-    eye: [
-        'sound/eye/eye1.m4a',
-        'sound/eye/eye2.m4a',
-    ],
-    sit: [
-        'sound/sit/sit1.m4a',
-        'sound/sit/sit2.m4a',
-    ],
-    drinkwater: [
-        'sound/drinkwater/drinkwater1.m4a',
-        'sound/drinkwater/drinkwater2.m4a',
-        'sound/drinkwater/drinkwater3.m4a'
-    ],
-    warm: [
-        'sound/warm/warm1.m4a',
-        'sound/warm/warm2.m4a',
-    ],
-    history: [
-        './sound/History/Constantinopolis.m4a',
-        './sound/History/Plato.m4a',
-        './sound/History/Mesopotamia.m4a',
-        './sound/History/war100.m4a'
-
-    ]
+    piam: ['Não Cá Vàng'].map(f => `./sound/_p.iam_/${f}.m4a`),
+    Sonnguyn: ['Người như anh xứng đáng có đơn'].map(f => `./sound/Sonnguyn/${f}.m4a`)
 };
 
-// Cache cho các audio element
 const audioCache = {};
 
-// Preload âm thanh
+// Category names mapping
+const categoryNames = {
+    'piam': '_p.iam_',
+    'Sonnguyn': 'Sonnguyn'
+};
+
+// Vinyl images mapping
+const vinylImages = {
+    'piam': 'disque/p.iam.png',
+    'Sonnguyn': 'disque/sonnguyn.png'
+};
+
+// ============ PRELOAD SOUNDS ============
 function preloadSounds() {
-    for (const [category, files] of Object.entries(soundFiles)) {
-        audioCache[category] = [];
-        files.forEach((file, index) => {
+    Object.entries(soundFiles).forEach(([category, files]) => {
+        audioCache[category] = files.map(file => {
             const audio = new Audio(file);
             audio.preload = 'auto';
-            audioCache[category].push(audio);
+            return audio;
         });
-    }
-}
-
-// Phát âm thanh ngẫu nhiên
-function playRandomNotificationSound(category, volume) {
-    if (!audioCache[category] || audioCache[category].length === 0) {
-        console.error('Không tìm thấy âm thanh cho category:', category);
-        return;
-    }
-
-    // Chọn ngẫu nhiên một file âm thanh trong category
-    const randomIndex = Math.floor(Math.random() * audioCache[category].length);
-    const audio = audioCache[category][randomIndex].cloneNode();
-    
-    audio.volume = volume;
-    audio.play().catch(error => {
-        console.error('Lỗi phát âm thanh:', error);
     });
 }
 
-// Hiển thị thông báo
-function showNotification(message) {
-    notification.textContent = message;
-    notification.classList.add('show');
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 5000);
+// ============ AUDIO PLAYER FUNCTIONS ============
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
-// Lấy cài đặt của thông báo theo index
-function getNotificationSettings(index) {
-    const setting = notificationSettings[index];
-    const timerDisplay = setting.querySelector('.timer-display');
+function updateProgressBar() {
+    if (!currentAudioPlayer) return;
+    
+    const currentTime = currentAudioPlayer.currentTime;
+    const duration = currentAudioPlayer.duration || 0;
+    const progressPercent = (currentTime / duration) * 100;
+    
+    const audioProgress = document.getElementById('audioProgress');
+    const currentTimeEl = document.getElementById('currentTime');
+    const totalTimeEl = document.getElementById('totalTime');
+    
+    if (audioProgress) audioProgress.style.width = `${progressPercent}%`;
+    if (currentTimeEl) currentTimeEl.textContent = formatTime(currentTime);
+    if (totalTimeEl) totalTimeEl.textContent = formatTime(duration);
+}
+
+function updatePlayerUI() {
+    const playIcon = document.getElementById('playIcon');
+    const pauseIcon = document.getElementById('pauseIcon');
+    
+    if (!playIcon || !pauseIcon) return;
+    
+    if (isPlaying) {
+        playIcon.classList.add('hidden');
+        pauseIcon.classList.remove('hidden');
+    } else {
+        playIcon.classList.remove('hidden');
+        pauseIcon.classList.add('hidden');
+    }
+}
+
+function togglePlayPause() {
+    if (!currentAudioPlayer) return;
+    
+    if (isPlaying) {
+        currentAudioPlayer.pause();
+        isPlaying = false;
+        if (updateInterval) {
+            clearInterval(updateInterval);
+            updateInterval = null;
+        }
+    } else {
+        currentAudioPlayer.play();
+        isPlaying = true;
+        updateInterval = setInterval(updateProgressBar, 100);
+    }
+    
+    updatePlayerUI();
+}
+
+function seekAudio(e) {
+    if (!currentAudioPlayer) return;
+    
+    const progressBarRect = e.currentTarget.getBoundingClientRect();
+    const clickPosition = (e.clientX - progressBarRect.left) / progressBarRect.width;
+    const seekTime = clickPosition * currentAudioPlayer.duration;
+    
+    currentAudioPlayer.currentTime = seekTime;
+    updateProgressBar();
+}
+
+function setupAudioPlayer(audioElement, category, fileName) {
+    // Stop previous audio if playing
+    if (currentAudioPlayer) {
+        currentAudioPlayer.pause();
+        isPlaying = false;
+        if (updateInterval) {
+            clearInterval(updateInterval);
+            updateInterval = null;
+        }
+    }
+    
+    // Set new audio
+    currentAudioPlayer = audioElement;
+    
+    // Get UI elements
+    const audioProgress = document.getElementById('audioProgress');
+    const currentTimeEl = document.getElementById('currentTime');
+    const totalTimeEl = document.getElementById('totalTime');
+    const currentAudioTitle = document.querySelector('.current-audio-title');
+    const currentAudioCategory = document.querySelector('.current-audio-category');
+    const vinylDisc = document.querySelector('.vinyl-disc');
+    
+    // Reset UI
+    if (audioProgress) audioProgress.style.width = '0%';
+    if (currentTimeEl) currentTimeEl.textContent = '00:00';
+    
+    // Change vinyl image based on category
+    if (vinylDisc && vinylImages[category]) {
+        vinylDisc.src = vinylImages[category];
+        vinylDisc.classList.add('spinning');
+    }
+    
+    // Update audio info display
+    if (currentAudioTitle) {
+        currentAudioTitle.textContent = `${categoryNames[category] || category} - ${fileName}`;
+    }
+    
+    // Set up event listeners for the new audio
+    currentAudioPlayer.addEventListener('loadedmetadata', () => {
+        if (totalTimeEl) totalTimeEl.textContent = formatTime(currentAudioPlayer.duration);
+    });
+    
+    currentAudioPlayer.addEventListener('timeupdate', updateProgressBar);
+    
+    currentAudioPlayer.addEventListener('ended', () => {
+        isPlaying = false;
+        updatePlayerUI();
+        if (updateInterval) {
+            clearInterval(updateInterval);
+            updateInterval = null;
+        }
+        
+        // Stop vinyl spinning
+        if (vinylDisc) vinylDisc.classList.remove('spinning');
+        
+        // Reset after a delay
+        setTimeout(() => {
+            if (audioProgress) audioProgress.style.width = '0%';
+            if (currentTimeEl) currentTimeEl.textContent = '00:00';
+            if (totalTimeEl) totalTimeEl.textContent = '00:00';
+            if (vinylDisc) vinylDisc.src = 'disque/p.iam.png';
+        }, 2000);
+    });
+    
+    // Start playing
+    currentAudioPlayer.play().catch(err => {
+        console.error('Lỗi phát audio:', err);
+    });
+    isPlaying = true;
+    updatePlayerUI();
+    updateInterval = setInterval(updateProgressBar, 100);
+}
+
+// ============ NOTIFICATION SOUND FUNCTIONS ============
+function playRandomNotificationSound(category, volume, onEnded, index) {
+    if (!audioCache[category]?.length) {
+        console.error('Không tìm thấy âm thanh cho category:', category);
+        if (onEnded) onEnded();
+        return;
+    }
+    
+    // Thêm vào hàng đợi nếu đang có âm thanh khác phát
+    if (currentAudio) {
+        audioQueue.push({ category, volume, onEnded, index });
+        return;
+    }
+    
+    const randomIndex = Math.floor(Math.random() * audioCache[category].length);
+    const audio = audioCache[category][randomIndex].cloneNode();
+    audio.volume = volume;
+    
+    // Get file name for display
+    const fileName = soundFiles[category][randomIndex]
+        .split('/').pop()
+        .replace('.m4a', '')
+        .replace(/_/g, ' ');
+    
+    // Set up player for this audio
+    setupAudioPlayer(audio, category, fileName);
+    
+    // Đánh dấu audio đang phát globally
+    currentAudio = audio;
+    
+    // Xử lý khi âm thanh kết thúc
+    const handleEnded = () => {
+        currentAudio = null;
+        if (onEnded) onEnded();
+        
+        // Phát âm thanh tiếp theo trong hàng đợi
+        if (audioQueue.length > 0) {
+            const next = audioQueue.shift();
+            playRandomNotificationSound(next.category, next.volume, next.onEnded, next.index);
+        }
+    };
+    
+    audio.addEventListener('ended', handleEnded);
+    
+    audio.play().catch(error => {
+        console.error('Lỗi phát âm thanh:', error);
+        currentAudio = null;
+        if (onEnded) onEnded();
+        
+        // Tiếp tục hàng đợi ngay cả khi có lỗi
+        if (audioQueue.length > 0) {
+            const next = audioQueue.shift();
+            playRandomNotificationSound(next.category, next.volume, next.onEnded, next.index);
+        }
+    });
+}
+
+// ============ TIMER FUNCTIONS ============
+function getNotificationSettings(settingItem) {
+    const customSelect = settingItem.querySelector('.custom-select');
+    const selectedValue = customSelect.getAttribute('data-value') || 'piam';
+    
     return {
-        soundType: setting.querySelector('.soundSelect').value,
-        enabled: setting.querySelector('.soundToggle').checked,
-        volume: setting.querySelector('.volumeControl').value / 100,
-        time: parseInt(timerDisplay.getAttribute('data-time')),
-        timerDisplay: timerDisplay
+        soundType: selectedValue,
+        volume: settingItem.querySelector('.volumeControl').value / 100,
+        time: parseFloat(settingItem.querySelector('.timer-display').getAttribute('data-time')),
+        timerDisplay: settingItem.querySelector('.timer-display')
     };
 }
 
-// Định dạng thời gian
-function formatTime(minutes, seconds) {
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+const getSettingItemIndex = (settingItem) => 
+    Array.from(document.querySelectorAll('.setting-item')).indexOf(settingItem);
+
+const formatTimeDisplay = (minutes, seconds) => 
+    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+function toggleButtons(settingItem, showStart) {
+    const startBtn = settingItem.querySelector('.start-btn');
+    const stopBtn = settingItem.querySelector('.stop-btn');
+    
+    if (startBtn) startBtn.style.display = showStart ? 'block' : 'none';
+    if (stopBtn) stopBtn.style.display = showStart ? 'none' : 'block';
 }
 
-// Cập nhật preview thời gian
-function updateTimePreview() {
-    const minutes = parseInt(customMinutes.value) || 0;
-    const seconds = parseInt(customSeconds.value) || 0;
-    timePreview.textContent = formatTime(minutes, seconds);
-}
-
-// Hiển thị modal điều chỉnh thời gian
-function showTimeModal(timerIndex) {
-    if (isRunning) return;
+function startTimer(settingItem) {
+    const index = getSettingItemIndex(settingItem);
+    const settings = getNotificationSettings(settingItem);
+    let timeLeft = Math.round(settings.time * 60);
     
-    currentEditingTimer = timerIndex;
-    const settings = getNotificationSettings(timerIndex);
-    const minutes = Math.floor(settings.time);
-    const seconds = Math.round((settings.time - minutes) * 60);
-    
-    // Đặt giá trị hiện tại
-    customMinutes.value = minutes;
-    customSeconds.value = seconds;
-    
-    // Cập nhật preview
-    updateTimePreview();
-    
-    // Hiển thị modal
-    timeModal.classList.add('show');
-}
-
-// Đóng modal
-function hideTimeModal() {
-    timeModal.classList.remove('show');
-    currentEditingTimer = null;
-}
-
-// Áp dụng thời gian mới
-function applyNewTime() {
-    if (currentEditingTimer === null) return;
-    
-    const minutes = parseInt(customMinutes.value) || 0;
-    const seconds = parseInt(customSeconds.value) || 0;
-    const totalMinutes = minutes + (seconds / 60);
-    
-    if (totalMinutes > 0 && totalMinutes <= 60) {
-        const timerDisplay = notificationSettings[currentEditingTimer].querySelector('.timer-display');
-        timerDisplay.setAttribute('data-time', totalMinutes.toString());
-        timerDisplay.textContent = formatTime(minutes, seconds);
-        hideTimeModal();
-    } else {
-        alert('Thời gian phải từ 1 giây đến 60 phút!');
-    }
-}
-
-// Bắt đầu tất cả bộ đếm thời gian
-function startAllTimers() {
-    if (isRunning) return;
-    
-    isRunning = true;
-    startBtn.disabled = true;
-    
-    timerIntervals.forEach(interval => clearInterval(interval));
-    timerIntervals = [];
-    
-    notificationSettings.forEach((_, index) => {
-        startTimer(index);
-    });
-}
-
-// Bắt đầu bộ đếm thời gian cho một thông báo cụ thể
-function startTimer(index) {
-    const settings = getNotificationSettings(index);
-    let timeLeft = settings.time * 60;
-    
-    updateTimerDisplay(index, timeLeft);
+    updateTimerDisplay(settingItem, timeLeft);
+    toggleButtons(settingItem, false);
     
     const interval = setInterval(() => {
+        if (!document.body.contains(settingItem)) {
+            clearInterval(interval);
+            return;
+        }
+        
         timeLeft--;
-        updateTimerDisplay(index, timeLeft);
+        updateTimerDisplay(settingItem, timeLeft);
         
         if (timeLeft <= 0) {
             clearInterval(interval);
-            
-            if (settings.enabled) {
-                playRandomNotificationSound(settings.soundType, settings.volume);
-            }
-            
-            setTimeout(() => {
-                startTimer(index);
-            }, 5000);
+            playRandomNotificationSound(settings.soundType, settings.volume, () => {
+                if (document.body.contains(settingItem)) {
+                    startTimer(settingItem);
+                }
+            }, index);
         }
     }, 1000);
     
-    timerIntervals.push(interval);
+    timerIntervals[index] = timerIntervals[index] || [];
+    timerIntervals[index].push(interval);
 }
 
-// Dừng tất cả bộ đếm thời gian
-function stopAllTimers() {
-    timerIntervals.forEach(interval => clearInterval(interval));
-    timerIntervals = [];
-    isRunning = false;
-    startBtn.disabled = false;
+function stopTimer(settingItem) {
+    const index = getSettingItemIndex(settingItem);
+    if (!timerIntervals[index]) return;
     
-    notificationSettings.forEach((_, index) => {
-        const settings = getNotificationSettings(index);
-        const minutes = Math.floor(settings.time);
-        const seconds = Math.round((settings.time - minutes) * 60);
-        settings.timerDisplay.textContent = formatTime(minutes, seconds);
-        settings.timerDisplay.style.color = "white";
-    });
+    timerIntervals[index].forEach(interval => clearInterval(interval));
+    timerIntervals[index] = [];
     
+    // Dừng âm thanh đang phát ngay lập tức
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        currentAudio = null;
+    }
+    
+    // Xóa hàng đợi audio
+    audioQueue = audioQueue.filter(item => item.index !== index);
+    
+    const settings = getNotificationSettings(settingItem);
+    const minutes = Math.floor(settings.time);
+    const seconds = Math.round((settings.time - minutes) * 60);
+    settings.timerDisplay.textContent = formatTimeDisplay(minutes, seconds);
+    settings.timerDisplay.style.color = "black";
+    
+    toggleButtons(settingItem, true);
 }
 
-// Cập nhật hiển thị bộ đếm thời gian
-function updateTimerDisplay(index, timeLeft) {
-    const settings = getNotificationSettings(index);
+function updateTimerDisplay(settingItem, timeLeft) {
+    const timerDisplay = settingItem.querySelector('.timer-display');
+    
     if (timeLeft > 0) {
         const minutes = Math.floor(timeLeft / 60);
         const seconds = timeLeft % 60;
-        settings.timerDisplay.textContent = formatTime(minutes, seconds);
-        settings.timerDisplay.style.color = "white";
+        timerDisplay.textContent = formatTimeDisplay(minutes, seconds);
+        timerDisplay.style.color = "black";
     } else {
-        settings.timerDisplay.textContent = "00:00";
-        settings.timerDisplay.style.color = "#ff6b6b";
+        timerDisplay.textContent = "00:00";
+        timerDisplay.style.color = "#000000ff";
     }
 }
 
-// Thiết lập các timer có thể chỉnh sửa
-function setupEditableTimers() {
-    document.querySelectorAll('.editable-timer').forEach((timer, index) => {
-        timer.addEventListener('click', function() {
-            showTimeModal(index);
+// ============ TIMER EDITOR ============
+function initializeInlineTimerEdit(settingItem) {
+    const timerDisplay = settingItem.querySelector('.timer-display');
+    let isEditing = false;
+    
+    timerDisplay.addEventListener('click', (e) => {
+        if (isEditing) return;
+        
+        const index = getSettingItemIndex(settingItem);
+        
+        if (timerIntervals[index]?.length) {
+            alert('Vui lòng dừng timer trước khi chỉnh sửa thời gian!');
+            return;
+        }
+        
+        isEditing = true;
+        
+        const currentTime = timerDisplay.getAttribute('data-time');
+        const totalSeconds = Math.round(parseFloat(currentTime) * 60);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        
+        const editorHTML = `
+            <div class="inline-timer-editor">
+                <input type="number" class="minutes-input" min="0" max="59" value="${minutes}">
+                <span class="separator">:</span>
+                <input type="number" class="seconds-input" min="0" max="59" value="${seconds}">
+            </div>
+        `;
+        
+        timerDisplay.style.display = 'none';
+        timerDisplay.insertAdjacentHTML('afterend', editorHTML);
+        
+        const editor = settingItem.querySelector('.inline-timer-editor');
+        const minutesInput = editor.querySelector('.minutes-input');
+        const secondsInput = editor.querySelector('.seconds-input');
+        
+        minutesInput.focus();
+        minutesInput.select();
+        
+        const limitValue = (input, max) => {
+            let value = parseInt(input.value) || 0;
+            if (value > max) input.value = max;
+            else if (value < 0) input.value = 0;
+        };
+        
+        minutesInput.addEventListener('input', () => limitValue(minutesInput, 59));
+        secondsInput.addEventListener('input', () => limitValue(secondsInput, 59));
+        
+        const updateTime = () => {
+            if (!isEditing) return false;
+            
+            let newMinutes = parseInt(minutesInput.value) || 0;
+            let newSeconds = parseInt(secondsInput.value) || 0;
+            
+            newMinutes = Math.min(59, Math.max(0, newMinutes));
+            newSeconds = Math.min(59, Math.max(0, newSeconds));
+            
+            // Nếu thời gian là 00:00, tự động chuyển thành 00:01
+            if (newMinutes === 0 && newSeconds === 0) {
+                newSeconds = 1;
+            }
+            
+            const totalMinutes = newMinutes + (newSeconds / 60);
+            
+            timerDisplay.setAttribute('data-time', totalMinutes.toString());
+            timerDisplay.textContent = formatTimeDisplay(newMinutes, newSeconds);
+            
+            editor.remove();
+            timerDisplay.style.display = 'inline-block';
+            isEditing = false;
+            return true;
+        };
+        
+        const handleEnter = (e) => {
+            if (e.key === 'Enter') {
+                updateTime();
+            } else if (e.key === 'Escape') {
+                editor.remove();
+                timerDisplay.style.display = 'inline-block';
+                isEditing = false;
+            }
+        };
+        
+        minutesInput.addEventListener('keydown', handleEnter);
+        secondsInput.addEventListener('keydown', handleEnter);
+        
+        setTimeout(() => {
+            document.addEventListener('click', function closeEditor(e) {
+                if (!editor.contains(e.target) && e.target !== timerDisplay && isEditing) {
+                    updateTime();
+                    document.removeEventListener('click', closeEditor);
+                }
+            });
+        }, 100);
+    });
+}
+
+// ============ DROPDOWN FUNCTIONS ============
+function initializeCustomDropdown(settingItem) {
+    const customSelect = settingItem.querySelector('.custom-select');
+    const selected = customSelect.querySelector('.selected');
+    const selectMenu = customSelect.querySelector('.select-menu');
+    
+    customSelect.setAttribute('data-value', 'piam');
+    
+    document.addEventListener('click', (e) => {
+        if (!customSelect.contains(e.target)) {
+            selectMenu.classList.remove('active');
+        }
+    });
+    
+    selected.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectMenu.classList.toggle('active');
+    });
+    
+    selectMenu.addEventListener('click', (e) => {
+        const target = e.target.closest('li[data-value]');
+        if (!target) return;
+        
+        const value = target.getAttribute('data-value');
+        const label = target.textContent.trim();
+        
+        selected.textContent = label;
+        customSelect.setAttribute('data-value', value);
+        selectMenu.classList.remove('active');
+        
+        e.stopPropagation();
+    });
+    
+    const menuParents = selectMenu.querySelectorAll('.menu-parent');
+    menuParents.forEach(parent => {
+        parent.addEventListener('click', (e) => {
+            if (e.target.closest('li[data-value]')) return;
+            e.stopPropagation();
         });
     });
 }
 
-// Sự kiện cho modal
-confirmTimeBtn.addEventListener('click', applyNewTime);
-cancelTimeBtn.addEventListener('click', hideTimeModal);
+// ============ VOLUME FUNCTIONS ============
+function createVolumeBars(settingItem) {
+    const volumeControl = settingItem.querySelector('.volumeControl');
+    const currentValue = parseInt(volumeControl.value);
+    
+    const volumeContainer = document.createElement('div');
+    volumeContainer.className = 'volume-container';
+    
+    for (let i = 1; i <= 10; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'volume-bar';
+        bar.dataset.level = i;
+        
+        if (i * 10 <= currentValue) {
+            bar.classList.add('active');
+        } else {
+            bar.classList.add('inactive');
+        }
+        
+        const randomRotate = (Math.random() - 0.5) * 2;
+        bar.style.transform = `rotate(${randomRotate}deg)`;
+        
+        bar.addEventListener('click', () => {
+            updateVolume(settingItem, i);
+        });
+        
+        volumeContainer.appendChild(bar);
+    }
+    
+    volumeControl.parentNode.insertBefore(volumeContainer, volumeControl.nextSibling);
+}
 
-// Sự kiện cho input tùy chỉnh
-customMinutes.addEventListener('input', updateTimePreview);
-customSeconds.addEventListener('input', updateTimePreview);
+function updateVolume(settingItem, level) {
+    const volumeControl = settingItem.querySelector('.volumeControl');
+    const bars = settingItem.querySelectorAll('.volume-bar');
+    
+    volumeControl.value = level * 10;
+    
+    // FIX: Áp dụng volume cho audio player đang phát
+    if (currentAudioPlayer) {
+        currentAudioPlayer.volume = (level * 10) / 100;
+    }
+    
+    bars.forEach((bar, index) => {
+        if (index < level) {
+            bar.classList.remove('inactive');
+            bar.classList.add('active');
+        } else {
+            bar.classList.remove('active');
+            bar.classList.add('inactive');
+        }
+    });
+}
 
-// Đóng modal khi click bên ngoài
-timeModal.addEventListener('click', function(e) {
-    if (e.target === timeModal) {
-        hideTimeModal();
+// ============ REMOVE REMINDER ============
+function removeReminder(index) {
+    const settingItems = document.querySelectorAll('.setting-item');
+    
+    if (index < 0 || index >= settingItems.length) {
+        console.error('Invalid index:', index);
+        return;
+    }
+    
+    stopTimer(settingItems[index]);
+    
+    // Dừng âm thanh đang phát ngay lập tức
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        currentAudio = null;
+    }
+    
+    // Xóa hàng đợi audio liên quan đến reminder này
+    audioQueue = audioQueue.filter(item => item.index !== index);
+    
+    if (timerIntervals[index]) {
+        timerIntervals[index].forEach(interval => clearInterval(interval));
+        timerIntervals[index] = [];
+    }
+    
+    settingItems[index].remove();
+    timerIntervals.splice(index, 1);
+    updateRemoveButtonsIndexes();
+}
+
+function updateRemoveButtonsIndexes() {
+    const settingItems = document.querySelectorAll('.setting-item');
+    
+    settingItems.forEach((item, index) => {
+        const removeBtn = item.querySelector('.remove-btn');
+        if (removeBtn) {
+            removeBtn.setAttribute('data-index', index);
+        }
+    });
+}
+
+// ============ INITIALIZE EVENT LISTENERS ============
+function initializeEventListenersForItem(settingItem) {
+    const testSoundBtn = settingItem.querySelector('.test-sound');
+    const removeBtn = settingItem.querySelector('.remove-btn');
+    const startBtn = settingItem.querySelector('.start-btn');
+    const stopBtn = settingItem.querySelector('.stop-btn');
+    const volumeControl = settingItem.querySelector('.volumeControl');
+    
+    initializeInlineTimerEdit(settingItem);
+    
+    if (testSoundBtn) {
+        testSoundBtn.addEventListener('click', () => {
+            const settings = getNotificationSettings(settingItem);
+            playRandomNotificationSound(settings.soundType, settings.volume);
+        });
+    }
+    
+    if (removeBtn) {
+        removeBtn.addEventListener('click', () => {
+            stopTimer(settingItem);
+            removeReminder(getSettingItemIndex(settingItem));
+        });
+    }
+    
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            stopTimer(settingItem);
+            startTimer(settingItem);
+        });
+    }
+    
+    if (stopBtn) {
+        stopBtn.addEventListener('click', () => stopTimer(settingItem));
+    }
+    
+    // FIX: Thêm event listener cho volume slider
+    if (volumeControl) {
+        volumeControl.addEventListener('input', (e) => {
+            const level = Math.ceil(e.target.value / 10);
+            updateVolume(settingItem, level);
+        });
+    }
+    
+    initializeCustomDropdown(settingItem);
+    
+    const settings = getNotificationSettings(settingItem);
+    const minutes = Math.floor(settings.time);
+    const seconds = Math.round((settings.time - minutes) * 60);
+    settings.timerDisplay.textContent = formatTimeDisplay(minutes, seconds);
+    
+    createVolumeBars(settingItem);
+}
+
+// ============ INITIALIZE AUDIO PLAYER ============
+function initializeAudioPlayer() {
+    const audioPlayPauseBtn = document.getElementById('audioPlayPause');
+    const audioProgressBar = document.getElementById('audioProgressBar');
+    
+    if (audioPlayPauseBtn) {
+        audioPlayPauseBtn.addEventListener('click', togglePlayPause);
+    }
+    
+    if (audioProgressBar) {
+        audioProgressBar.addEventListener('click', seekAudio);
+    }
+}
+
+// ============ PREVENT ZOOM ============
+document.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && 
+        (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
+        e.preventDefault();
     }
 });
 
-// Sự kiện nút
-startBtn.addEventListener('click', startAllTimers);
-stopBtn.addEventListener('click', stopAllTimers);
+document.addEventListener('wheel', function(e) {
+    if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+    }
+}, { passive: false });
 
-// Sự kiện nút nghe thử âm thanh
-document.querySelectorAll('.test-sound').forEach((btn, index) => {
-    btn.addEventListener('click', () => {
-        const settings = getNotificationSettings(index);
-        if (settings.enabled) {
-            playRandomNotificationSound(settings.soundType, settings.volume);
-        }
-    });
+document.addEventListener('gesturestart', function(e) {
+    e.preventDefault();
 });
 
-// Khởi tạo
-preloadSounds();
-setupEditableTimers();
-notificationSettings.forEach((_, index) => {
-    const settings = getNotificationSettings(index);
+// ============ INITIALIZATION ============
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing...');
+    
+    preloadSounds();
+    
+    document.querySelectorAll('.setting-item').forEach(item => {
+        console.log('Initializing setting item:', item);
+        initializeEventListenersForItem(item);
+    });
+    
+    initializeAudioPlayer();
+    
+    console.log('Initialization complete');
+});
+
+
+
+// Thêm vào script.js
+
+// ============ SOUND WAVE INDICATOR ============
+function createSoundWaveIndicator(settingItem) {
+    const timerDisplay = settingItem.querySelector('.timer-display');
+    
+    // Kiểm tra nếu đã có indicator rồi thì không tạo nữa
+    if (settingItem.querySelector('.sound-wave-indicator')) {
+        return;
+    }
+    
+    const soundWave = document.createElement('div');
+    soundWave.className = 'sound-wave-indicator';
+    
+    // Tạo 5 thanh âm thanh
+    for (let i = 0; i < 5; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'sound-wave-bar';
+        soundWave.appendChild(bar);
+    }
+    
+    // Thêm vào sau timer display
+    timerDisplay.parentNode.insertBefore(soundWave, timerDisplay.nextSibling);
+}
+
+function showSoundWaveIndicator(settingItem) {
+    const indicator = settingItem.querySelector('.sound-wave-indicator');
+    if (indicator) {
+        indicator.classList.add('active');
+    }
+}
+
+function hideSoundWaveIndicator(settingItem) {
+    const indicator = settingItem.querySelector('.sound-wave-indicator');
+    if (indicator) {
+        indicator.classList.remove('active');
+    }
+}
+
+// ============ CẬP NHẬT HÀM TIMER ============
+// Thay thế hàm startTimer hiện tại bằng code này:
+
+function startTimer(settingItem) {
+    const index = getSettingItemIndex(settingItem);
+    const settings = getNotificationSettings(settingItem);
+    let timeLeft = Math.round(settings.time * 60);
+    
+    updateTimerDisplay(settingItem, timeLeft);
+    toggleButtons(settingItem, false);
+    
+    // Hiển thị sound wave indicator
+    showSoundWaveIndicator(settingItem);
+    
+    const interval = setInterval(() => {
+        if (!document.body.contains(settingItem)) {
+            clearInterval(interval);
+            hideSoundWaveIndicator(settingItem);
+            return;
+        }
+        
+        timeLeft--;
+        updateTimerDisplay(settingItem, timeLeft);
+        
+        if (timeLeft <= 0) {
+            clearInterval(interval);
+            playRandomNotificationSound(settings.soundType, settings.volume, () => {
+                if (document.body.contains(settingItem)) {
+                    startTimer(settingItem);
+                }
+            }, index);
+        }
+    }, 1000);
+    
+    timerIntervals[index] = timerIntervals[index] || [];
+    timerIntervals[index].push(interval);
+}
+
+// Cập nhật hàm stopTimer
+function stopTimer(settingItem) {
+    const index = getSettingItemIndex(settingItem);
+    if (!timerIntervals[index]) return;
+    
+    timerIntervals[index].forEach(interval => clearInterval(interval));
+    timerIntervals[index] = [];
+    
+    // Ẩn sound wave indicator
+    hideSoundWaveIndicator(settingItem);
+    
+    // Dừng âm thanh đang phát ngay lập tức
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        currentAudio = null;
+    }
+    
+    // Xóa hàng đợi audio
+    audioQueue = audioQueue.filter(item => item.index !== index);
+    
+    const settings = getNotificationSettings(settingItem);
     const minutes = Math.floor(settings.time);
     const seconds = Math.round((settings.time - minutes) * 60);
-    settings.timerDisplay.textContent = formatTime(minutes, seconds);
-});
+    settings.timerDisplay.textContent = formatTimeDisplay(minutes, seconds);
+    settings.timerDisplay.style.color = "black";
+    
+    toggleButtons(settingItem, true);
+}
+
+// Cập nhật hàm initializeEventListenersForItem để tạo sound wave indicator
+function initializeEventListenersForItem(settingItem) {
+    const testSoundBtn = settingItem.querySelector('.test-sound');
+    const removeBtn = settingItem.querySelector('.remove-btn');
+    const startBtn = settingItem.querySelector('.start-btn');
+    const stopBtn = settingItem.querySelector('.stop-btn');
+    const volumeControl = settingItem.querySelector('.volumeControl');
+    
+    // Tạo sound wave indicator
+    createSoundWaveIndicator(settingItem);
+    
+    initializeInlineTimerEdit(settingItem);
+    
+    if (testSoundBtn) {
+        testSoundBtn.addEventListener('click', () => {
+            const settings = getNotificationSettings(settingItem);
+            playRandomNotificationSound(settings.soundType, settings.volume);
+        });
+    }
+    
+    if (removeBtn) {
+        removeBtn.addEventListener('click', () => {
+            stopTimer(settingItem);
+            removeReminder(getSettingItemIndex(settingItem));
+        });
+    }
+    
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            stopTimer(settingItem);
+            startTimer(settingItem);
+        });
+    }
+    
+    if (stopBtn) {
+        stopBtn.addEventListener('click', () => stopTimer(settingItem));
+    }
+    
+    if (volumeControl) {
+        volumeControl.addEventListener('input', (e) => {
+            const level = Math.ceil(e.target.value / 10);
+            updateVolume(settingItem, level);
+        });
+    }
+    
+    initializeCustomDropdown(settingItem);
+    
+    const settings = getNotificationSettings(settingItem);
+    const minutes = Math.floor(settings.time);
+    const seconds = Math.round((settings.time - minutes) * 60);
+    settings.timerDisplay.textContent = formatTimeDisplay(minutes, seconds);
+    
+    createVolumeBars(settingItem);
+}
